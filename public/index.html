@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku Solver</title>
+    <style>
+        * {box-sizing: border-box;}
+        
+        body { 
+          margin: 0;
+          font-family: Arial, Helvetica, sans-serif;
+          background-color: aqua;
+        }
+        
+        .header {
+          overflow: hidden;
+          background-color: #f1f1f1;
+          padding: 20px 10px;
+          text-align: center;
+        }
+        
+        .header a {
+          color: black;
+          text-align: center;
+          padding: 12px;
+          text-decoration: none;
+          font-size: 18px; 
+          line-height: 25px;
+          border-radius: 4px;
+        }
+        
+        .header a.logo {
+          font-size: 25px;
+          font-weight: bold;
+        }
+        
+        .header a:hover {
+          background-color: #ddd;
+          color: black;
+        }
+        
+        .header a.active {
+          background-color: dodgerblue;
+          color: white;
+        }
+        
+        .header-right {
+          float: right;
+        }
+        
+        @media screen and (max-width: 500px) {
+          .header a {
+            float: none;
+            display: block;
+            text-align: left;
+          }
+          
+          .header-right {
+            float: none;
+          }
+        }
+
+        #sudokuInput{
+            padding:20px;
+        }
+
+        .sudokuGrid{
+            border: 2px solid rgb(146, 144, 144);
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            margin:1px;
+        }
+
+        .rightGrid{
+            border-right: 2px solid black;
+        }
+
+        .bottomGrid{
+            border-bottom: 2px solid black;
+        }
+
+        .leftGrid{
+            border-left: 2px solid black;
+        }
+
+        .topGrid{
+            border-top: 2px solid black;
+        }
+
+        .button {
+  display: inline-block;
+  border-radius: 4px;
+  background-color: #f4511e;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 28px;
+  padding: 7px;
+  width: 120px;
+  transition: all 0.5s;
+  cursor: pointer;
+  margin: 5px;
+  margin-left: 145px;
+}
+
+.button span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.button span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.button:hover span {
+  padding-right: 15px;
+}
+
+.button:hover span:after {
+  opacity: 1;
+  right: 0;
+}
+
+#Warning{
+    margin-left: 30px;
+    color: red;
+    font-weight: bold;
+    font-size: medium;
+}
+
+input{
+    font-family: monospace, sans-serif;
+    font-size:medium;
+}
+
+h1{
+    text-align:center;
+}
+
+h4{
+    margin-left: 30px;
+}
+    </style>
+</head>
+<body>
+        
+        <div class="header">
+          <a href="#default" class="logo">Sudoku</a>
+        </div>
+        <h1>Enter the values in Sudoku</h1>
+        <h4>Enter the values from 1 to 9 and leave the grid as 0 if it is empty</h4>
+        <div id="sudokuInput">
+        </div>
+
+        <p id="Warning" style="display: none;">Please fill all the grids with valid numbers</p>
+        <p id="noSolution" style="display: none;">No Solution Exists</p>
+
+        <button class="button" id="solveSudoku" style="vertical-align:middle"><span>Solve </span></button>
+</body>
+<script>
+    var sudokuInput = document.getElementById("sudokuInput");
+    for(var i = 0; i < 9; i++)
+    {
+        for(var j = 0; j < 9; j++)
+        {
+            if(i === 0 && j === 0){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid topGrid leftGrid'>`;
+            }else if(i === 0 && j%3+1 == 3){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid rightGrid topGrid'>`;
+            }else if(i === 0){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid topGrid'>`;
+            }else if(j === 0 && i%3+1 === 3){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid leftGrid bottomGrid'>`;
+            }else if(j === 0){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid leftGrid '>`;
+            }else if(i%3 + 1 === 3 && j%3 + 1 === 3){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid rightGrid bottomGrid'>`;
+            }else if(i%3+1 === 3){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid bottomGrid'>`;
+            }else if(j%3+1 === 3){
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid rightGrid'>`;
+            }else{
+                sudokuInput.innerHTML += `<input type='text' value='0' id=${i}${j} class='sudokuGrid'>`;
+            }
+        }
+        sudokuInput.innerHTML += '<br/>';
+    }
+    console.log(sudokuInput);
+
+    document.getElementById("solveSudoku").onclick = function(){
+        document.getElementById("Warning").style.display = "none";
+        document.getElementById("noSolution").style.display = "none";
+
+        var sudoku = new Array(9);
+
+        for(var i = 0; i < 9; i++)
+        {
+            sudoku[i] = new Array(9);
+        }
+
+        for(var i = 0; i < 9; i++)
+        {
+          for(var j = 0; j < 9; j++)
+          {
+            var value = (i*10 + j).toString();
+            if(value < 9)
+            {
+              value = "0" + value;
+            }
+            var checkValue = document.getElementById(value).value;
+            if(checkValue < 0 || checkValue > 9)
+            {
+                document.getElementById("Warning").style.display = "";
+                return;
+            }
+            sudoku[i][j] = checkValue;
+          }
+        }
+
+        console.log("Before Solving");
+
+        for(var i = 0; i < 9; i++)
+        {
+            for(var j = 0; j < 9; j++)
+            {
+                sudoku[i][j] = parseInt(sudoku[i][j]);
+            }
+        }
+
+        if (SolveSudoku(sudoku) === true) 
+        {
+            printGrid(sudoku); 
+            console.log("sudoku");
+        }else{
+            console.log("Error");
+        document.getElementById("noSolution").value = "";
+        }
+    };
+
+    var SolveSudoku = function(sudoku){
+        var rowCol = {row:0,col:0};
+
+        if(!FindUnassignedLocation(sudoku,rowCol))
+         return true;
+
+         console.log('row ' + rowCol.row + ' col ' + rowCol.col);
+
+        for(var num = 1; num <= 9; num++)
+        {
+            if(isSafe(sudoku,rowCol.row,rowCol.col,num)){
+                sudoku[rowCol.row][rowCol.col] = num;
+
+                if(SolveSudoku(sudoku))
+                   return true;
+                
+                sudoku[rowCol.row][rowCol.col] = 0;
+            }
+        }
+      return false;
+    }
+
+    var FindUnassignedLocation = function(sudoku,rowCol){
+        console.log("Unassifned location");
+        for(rowCol.row = 0; rowCol.row < 9; rowCol.row++)
+        {
+            for(rowCol.col = 0; rowCol.col < 9; rowCol.col++)
+            {
+                console.log("row " + rowCol.row + " col " + rowCol.col + " " + typeof sudoku[rowCol.row][rowCol.col]);
+                if(sudoku[rowCol.row][rowCol.col] === 0)
+                 return true;
+            }
+        }
+        return false;
+    }
+
+    var UsedInRow = function(sudoku,row,num){
+        for(var col = 0; col < 9; col++)
+        {
+            if(sudoku[row][col] === num){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var UsedInCol = function(sudoku,col,num){
+        for(var row = 0; row < 9; row++){
+            if(sudoku[row][col] === num){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var UsedInBox = function(sudoku,boxStartRow,boxStartCol,num){
+        
+        console.log("inside box");
+        console.log(sudoku);
+
+        for(var row = 0; row < 3; row++)
+        {
+            for(var col = 0; col < 3; col++)
+            {
+                if(sudoku[row+boxStartRow][col+boxStartCol] === num)
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var isSafe = function(sudoku,row,col,num){
+
+        return !UsedInRow(sudoku,row,num) && 
+                !UsedInCol(sudoku,col,num) && 
+                !UsedInBox(sudoku,row-row%3,col-col%3,num)
+                && sudoku[row][col] === 0;
+    }
+
+    var printGrid = function(sudoku){
+        for(var i = 0; i < 9; i++)
+        {
+          for(var j = 0; j < 9; j++)
+          {
+            var value = (i*10 + j).toString();
+            if(value < 9)
+            {
+              value = "0" + value;
+            }
+            document.getElementById(value).value = sudoku[i][j];
+          }
+        }
+    }
+    
+</script>
+
+</html>
